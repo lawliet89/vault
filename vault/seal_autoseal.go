@@ -144,7 +144,30 @@ func (d *autoSeal) GetStoredKeys(ctx context.Context) ([][]byte, error) {
 		return nil, fmt.Errorf("failed to decode stored keys: %v", err)
 	}
 
+	if blobInfo.KeyInfo != nil && blobInfo.KeyInfo.KeyID != d.Access.KeyID() {
+		d.core.logger.Info("autoseal - GetStoredKeys : stored keys need to be upgraded")
+		d.core.SetUpgradeSealKeys()
+	}
+
 	return keys, nil
+}
+
+func (d *autoSeal) UpgradeKeys(ctx context.Context) error {
+	rkey, err := d.RecoveryKey(ctx)
+	if err != nil {
+		return err
+	}
+	if err := d.SetRecoveryKey(ctx, rkey); err != nil {
+		return err
+	}
+	skeys, err := d.GetStoredKeys(ctx)
+	if err != nil {
+		return err
+	}
+	if err := d.SetStoredKeys(ctx, skeys); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *autoSeal) BarrierConfig(ctx context.Context) (*SealConfig, error) {
@@ -427,6 +450,10 @@ func (d *autoSeal) getRecoveryKeyInternal(ctx context.Context) ([]byte, error) {
 		return nil, errwrap.Wrapf("failed to decrypt encrypted stored keys: {{err}}", err)
 	}
 
+	if blobInfo.KeyInfo != nil && blobInfo.KeyInfo.KeyID != d.Access.KeyID() {
+		d.core.logger.Info("autoseal - getRecoveryKeyInternal : recovery keys need to be upgraded")
+		d.core.SetUpgradeSealKeys()
+	}
 	return pt, nil
 }
 

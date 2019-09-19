@@ -72,6 +72,7 @@ type Seal interface {
 	SetCachedRecoveryConfig(*SealConfig)
 	SetRecoveryKey(context.Context, []byte) error
 	VerifyRecoveryKey(context.Context, []byte) error
+	UpgradeKeys(context.Context) error
 
 	GetAccess() seal.Access
 }
@@ -270,6 +271,13 @@ func (d *defaultSeal) SetRecoveryConfig(ctx context.Context, config *SealConfig)
 }
 
 func (d *defaultSeal) SetCachedRecoveryConfig(config *SealConfig) {
+}
+
+func (d *defaultSeal) UpgradeKeys(ctx context.Context) error {
+	if d.PretendToAllowRecoveryKeys && d.PretendToAllowStoredShares {
+		return nil
+	}
+	return fmt.Errorf("upgrade keys not supported")
 }
 
 func (d *defaultSeal) VerifyRecoveryKey(ctx context.Context, key []byte) error {

@@ -461,6 +461,10 @@ type Core struct {
 	pendingRaftPeers map[string][]byte
 
 	coreNumber int
+
+	// upgradeSealKeys is used to mark when the auto unseal keys are
+	// encrypted with a key different from the currently available key.
+	upgradeSealKeys *uint32
 }
 
 // CoreConfig is used to parameterize a core
@@ -652,6 +656,7 @@ func NewCore(conf *CoreConfig) (*Core, error) {
 		neverBecomeActive:            new(uint32),
 		clusterLeaderParams:          new(atomic.Value),
 		metricsHelper:                conf.MetricsHelper,
+		upgradeSealKeys:              new(uint32),
 		counters: counters{
 			requests:     new(uint64),
 			syncInterval: syncInterval,
@@ -1690,6 +1695,10 @@ func (c *Core) postUnseal(ctx context.Context, ctxCancelFunc context.CancelFunc,
 
 	if err := unsealer.unseal(ctx, c.logger, c); err != nil {
 		return err
+	}
+
+	if atomic.LoadUint32(c.upgradeSealKeys) == 1 {
+		c.doUpgradeSealKeys(c.activeContext)
 	}
 
 	c.metricsCh = make(chan struct{})
