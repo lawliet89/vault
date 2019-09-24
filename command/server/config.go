@@ -241,6 +241,9 @@ type Telemetry struct {
 	// Default: 24h
 	PrometheusRetentionTime    time.Duration `hcl:"-"`
 	PrometheusRetentionTimeRaw interface{}   `hcl:"prometheus_retention_time"`
+	// PrometheusAnonymousAccess allows unauthenticated access to the prometheus API endpoint.
+	// Default: false
+	PrometheusAnonymousAccess bool `hcl:"false"`
 
 	// Stackdriver:
 	// StackdriverProjectID is the project to publish stackdriver metrics to.

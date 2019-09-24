@@ -23,15 +23,15 @@ import (
 	"github.com/hashicorp/vault/helper/metricsutil"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3"
-	metrics "github.com/armon/go-metrics"
+	"github.com/armon/go-metrics"
 	"github.com/armon/go-metrics/circonus"
 	"github.com/armon/go-metrics/datadog"
 	"github.com/armon/go-metrics/prometheus"
 	stackdriver "github.com/google/go-metrics-stackdriver"
 	"github.com/hashicorp/errwrap"
 	log "github.com/hashicorp/go-hclog"
-	multierror "github.com/hashicorp/go-multierror"
-	sockaddr "github.com/hashicorp/go-sockaddr"
+	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-sockaddr"
 	"github.com/hashicorp/vault/audit"
 	"github.com/hashicorp/vault/command/server"
 	serverseal "github.com/hashicorp/vault/command/server/seal"
@@ -52,7 +52,7 @@ import (
 	vaultseal "github.com/hashicorp/vault/vault/seal"
 	shamirseal "github.com/hashicorp/vault/vault/seal/shamir"
 	"github.com/mitchellh/cli"
-	testing "github.com/mitchellh/go-testing-interface"
+	"github.com/mitchellh/go-testing-interface"
 	"github.com/posener/complete"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc/grpclog"
@@ -1892,11 +1892,14 @@ func (c *ServerCommand) setupTelemetry(config *server.Config) (*metricsutil.Metr
 
 	// Configure the statsite sink
 	var fanout metrics.FanoutSink
-	var prometheusEnabled bool
+	var prometheusMetricsOpts *metricsutil.PrometheusOptions
 
 	// Configure the Prometheus sink
 	if telConfig.PrometheusRetentionTime != 0 {
-		prometheusEnabled = true
+		prometheusMetricsOpts = &metricsutil.PrometheusOptions{
+			PrometheusEnabled: true,
+			AnonymousAccess:   telConfig.PrometheusAnonymousAccess,
+		}
 		prometheusOpts := prometheus.PrometheusOpts{
 			Expiration: telConfig.PrometheusRetentionTime,
 		}
@@ -1908,7 +1911,7 @@ func (c *ServerCommand) setupTelemetry(config *server.Config) (*metricsutil.Metr
 		fanout = append(fanout, sink)
 	}
 
-	metricHelper := metricsutil.NewMetricsHelper(inm, prometheusEnabled)
+	metricHelper := metricsutil.NewMetricsHelper(inm, prometheusMetricsOpts)
 
 	if telConfig.StatsiteAddr != "" {
 		sink, err := metrics.NewStatsiteSink(telConfig.StatsiteAddr)

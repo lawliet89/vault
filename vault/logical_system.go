@@ -148,6 +148,11 @@ func NewSystemBackend(core *Core, logger log.Logger) *SystemBackend {
 		},
 	}
 
+	// Check if the metrics endpoint allows anonymous access
+	if b.Core.metricsHelper.PrometheusOptions.AnonymousAccess {
+		b.Backend.PathsSpecial.Unauthenticated = append(b.Backend.PathsSpecial.Unauthenticated, "metrics")
+	}
+
 	b.Backend.Paths = append(b.Backend.Paths, entPaths(b)...)
 	b.Backend.Paths = append(b.Backend.Paths, b.configPaths()...)
 	b.Backend.Paths = append(b.Backend.Paths, b.rekeyPaths()...)

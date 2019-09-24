@@ -22,11 +22,17 @@ const (
 
 type MetricsHelper struct {
 	inMemSink         *metrics.InmemSink
-	PrometheusEnabled bool
+	PrometheusOptions *PrometheusOptions
 }
 
-func NewMetricsHelper(inMem *metrics.InmemSink, enablePrometheus bool) *MetricsHelper {
-	return &MetricsHelper{inMem, enablePrometheus}
+// PrometheusOptions defines the metrics prometheus options.
+type PrometheusOptions struct {
+	PrometheusEnabled bool
+	AnonymousAccess   bool
+}
+
+func NewMetricsHelper(inMem *metrics.InmemSink, prometheusOptions *PrometheusOptions) *MetricsHelper {
+	return &MetricsHelper{inMem, prometheusOptions}
 }
 
 func FormatFromRequest(req *logical.Request) string {
@@ -52,7 +58,7 @@ func (m *MetricsHelper) ResponseForFormat(format string) (*logical.Response, err
 }
 
 func (m *MetricsHelper) PrometheusResponse() (*logical.Response, error) {
-	if !m.PrometheusEnabled {
+	if !m.PrometheusOptions.PrometheusEnabled {
 		return &logical.Response{
 			Data: map[string]interface{}{
 				logical.HTTPContentType: "text/plain",
